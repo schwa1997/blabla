@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blabla · 对话生成器</title>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
+<style>
+  :root {
+    --paper: #F1F4EE;
+    --ink: #2F3B33;
+    --ink-soft: #6B786E;
+    --leaf: #CFE0C4;
+    --leaf-in: #E8F0E1;
+    --sky: #C5D9E6;
+    --sky-in: #E6EFF5;
+    --ochre: #D9A441;
+    --line: #D5DCD2;
+    --kai: "LXGW WenKai", "霞鹜文楷", "KaiTi", "STKaiti", "楷体", "Kaiti SC", "Noto Serif CJK SC", serif;
+    --ui: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #E4E9E1;
+    color: var(--ink);
+    font-family: var(--ui);
+    display: grid;
+    grid-template-columns: 260px minmax(300px, 400px) 1fr;
+    height: 100vh;
+  }
+
+  /* ---------- sidebar: chat-history-style list ---------- */
+  .sidebar {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 20px 14px; background: #EAEEE6;
+    border-right: 1px solid var(--line); min-height: 0;
+  }
+  .brand { font-family: var(--kai); font-size: 26px; margin: 0; padding: 0 6px; }
+  .searchBox {
+    font: 13px var(--ui); padding: 8px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: #FBFCFA; color: var(--ink); width: 100%;
+  }
+  .searchBox:focus-visible { outline: 2px solid var(--ochre); outline-offset: 1px; }
+  .convList {
+    flex: 1; min-height: 0; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .convItem {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 9px 8px; border-radius: 10px; border: none; background: transparent;
+    font: inherit; color: inherit; cursor: pointer;
+  }
+  .convItem:hover { background: #DEE5D8; }
+  .convItem.active { background: var(--leaf-in); }
+  .convItem-avatar {
+    width: 38px; height: 38px; flex: none; border-radius: 50%;
+    display: grid; place-items: center; font-size: 20px; font-family: var(--kai);
+    background: radial-gradient(circle at 40% 35%, var(--leaf-in), var(--leaf));
+  }
+  .convItem-body { min-width: 0; flex: 1; }
+  .convItem-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .convItem-title {
+    font-size: 14px; color: var(--ink); min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .convItem-date { font-size: 11px; color: var(--ink-soft); flex: none; }
+  .convItem-meta {
+    font-size: 12px; color: var(--ink-soft); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .convList .empty { padding: 16px 8px; font-size: 13px; }
+
+  /* ---------- editor ---------- */
+  .editor {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 20px; background: var(--paper);
+    border-right: 1px solid var(--line); min-height: 0;
+  }
+  .hint { font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
+  .hint code { background: #E3EADF; padding: 1px 5px; border-radius: 4px; }
+  textarea {
+    flex: 1; min-height: 200px; resize: none;
+    font: 15px/1.7 var(--ui); color: var(--ink);
+    background: #FBFCFA; border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+  }
+  textarea:focus-visible, button:focus-visible, label.btn:focus-within {
+    outline: 2px solid var(--ochre); outline-offset: 2px;
+  }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  button, label.btn {
+    font: 14px var(--ui); cursor: pointer;
+    padding: 9px 14px; border-radius: 8px;
+    border: 1px solid #C3CEC0; background: #FBFCFA; color: var(--ink);
+  }
+  button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  button:disabled { opacity: .5; cursor: wait; }
+  label.btn input { display: none; }
+  .status { font-size: 13px; color: var(--ink-soft); min-height: 1.4em; margin: 0; }
+
+  /* ---------- preview ---------- */
+  .preview { overflow: auto; padding: 24px; min-height: 0; }
+  .viewTabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab {
+    font: 13px var(--ui); padding: 7px 16px; border-radius: 999px;
+    border: 1px solid #C3CEC0; background: #FBFCFA; color: var(--ink-soft); cursor: pointer;
+  }
+  .tab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  [hidden] { display: none !important; }
+
+  /* ---------- read view: scrollable chat-history reading mode ---------- */
+  .readPanel { max-width: 720px; margin: 0 auto; }
+  .read-head { margin-bottom: 28px; }
+  .read-title { font-family: var(--kai); font-size: 30px; font-weight: 400; margin: 0 0 6px; }
+  .read-meta { font-size: 13px; color: var(--ink-soft); margin: 0; }
+  .read-chat { display: flex; flex-direction: column; gap: 16px; }
+  .rrow { display: flex; align-items: flex-start; gap: 12px; }
+  .rrow.me { flex-direction: row-reverse; }
+  .rrow.grouped { margin-top: -8px; }
+  .ravatar {
+    width: 38px; height: 38px; flex: none; border-radius: 50%;
+    display: grid; place-items: center; font-size: 20px; font-family: var(--kai);
+    background: radial-gradient(circle at 40% 35%, var(--leaf-in), var(--leaf));
+  }
+  .rrow.me .ravatar { background: radial-gradient(circle at 40% 35%, var(--sky-in), var(--sky)); }
+  .rrow.grouped .ravatar { visibility: hidden; }
+  .rmsg { display: flex; flex-direction: column; max-width: 72%; }
+  .rrow.me .rmsg { align-items: flex-end; }
+  .rname { font-size: 12px; color: var(--ink-soft); margin: 0 0 4px 4px; }
+  .rrow.me .rname { margin: 0 4px 4px 0; }
+  .rbubble {
+    font-size: 15px; line-height: 1.6; padding: 10px 14px;
+    white-space: pre-wrap; word-break: break-word;
+    background: var(--leaf-in); box-shadow: inset 0 0 0 1px rgba(110,150,100,.18);
+    border-radius: 4px 14px 14px 14px;
+  }
+  .rrow.me .rbubble {
+    background: var(--sky-in); box-shadow: inset 0 0 0 1px rgba(100,140,170,.20);
+    border-radius: 14px 4px 14px 14px;
+  }
+  .read-divider {
+    align-self: center; display: block; margin: 20px auto 16px; padding: 5px 16px;
+    border-radius: 999px; border: 1px solid var(--line); background: #FBFCFA;
+    color: var(--ink-soft); font: 12px var(--ui); cursor: pointer;
+  }
+  .read-divider:first-child { margin-top: 0; }
+  .read-divider.active { background: var(--leaf-in); color: var(--ink); border-color: transparent; }
+
+  /* ---------- export pages ---------- */
+  .pages { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .thumb {
+    width: calc(1080px * var(--s, .36));
+    height: calc(1440px * var(--s, .36));
+    overflow: hidden; border-radius: 6px; cursor: pointer;
+    box-shadow: 0 2px 10px rgba(47,59,51,.12);
+    position: relative; flex: none;
+  }
+  .thumb:hover::after {
+    content: "导出这一页"; position: absolute; right: 8px; bottom: 8px;
+    font: 12px var(--ui); background: var(--ink); color: var(--paper);
+    padding: 4px 8px; border-radius: 6px;
+  }
+
+  /* ---------- the 1080 x 1440 page (this is what gets exported) ---------- */
+  .page {
+    width: 1080px; height: 1440px;
+    transform: scale(var(--s, .36)); transform-origin: top left;
+    background:
+      radial-gradient(ellipse 620px 480px at 6% 4%, rgba(160,196,150,.30), transparent 70%),
+      radial-gradient(ellipse 700px 520px at 100% 100%, rgba(150,186,210,.30), transparent 70%),
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--kai);
+    display: flex; flex-direction: column;
+    padding: 96px 84px 64px;
+  }
+  .page-head { margin-bottom: 56px; }
+  .page-title {
+    font-size: 76px; line-height: 1.2; margin: 0; font-weight: 400;
+    display: inline-block; position: relative;
+  }
+  .page-title::after {
+    content: ""; position: absolute; left: -12px; right: -18px; bottom: 4px; height: 28px; z-index: -1;
+    background: radial-gradient(ellipse at 30% 50%, rgba(217,164,65,.45), rgba(217,164,65,.18) 70%, transparent 100%);
+    border-radius: 40% 60% 50% 45%;
+  }
+  .page-title { z-index: 0; }
+  .page.cont .page-head { margin-bottom: 40px; }
+  .page.cont .page-title { font-size: 36px; color: var(--ink-soft); }
+  .page.cont .page-title::after { display: none; }
+
+  .chat {
+    flex: 1; min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column; gap: 30px;
+  }
+  .row { display: flex; align-items: flex-start; gap: 22px; }
+  .row.me { flex-direction: row-reverse; }
+  .row.grouped { margin-top: -16px; }
+  .avatar {
+    width: 92px; height: 92px; flex: none; border-radius: 50%;
+    display: grid; place-items: center; font-size: 54px; line-height: 1;
+    background: radial-gradient(circle at 40% 35%, var(--leaf-in), var(--leaf));
+    font-family: var(--kai); color: var(--ink);
+  }
+  .row.me .avatar { background: radial-gradient(circle at 40% 35%, var(--sky-in), var(--sky)); }
+  .row.grouped .avatar { visibility: hidden; height: 0; }
+  .msg { display: flex; flex-direction: column; max-width: 74%; }
+  .row.me .msg { align-items: flex-end; }
+  .name { font-size: 28px; color: var(--ink-soft); margin: 0 0 8px 6px; }
+  .row.me .name { margin: 0 6px 8px 0; }
+  .bubble {
+    font-size: 42px; line-height: 1.55; padding: 22px 32px;
+    white-space: pre-wrap; word-break: break-word;
+    background: radial-gradient(ellipse at 40% 35%, var(--leaf-in) 45%, var(--leaf) 100%);
+    box-shadow: inset 0 0 0 2px rgba(110,150,100,.18);
+    border-radius: 14px 44px 40px 46px;
+  }
+  .row.me .bubble {
+    background: radial-gradient(ellipse at 60% 35%, var(--sky-in) 45%, var(--sky) 100%);
+    box-shadow: inset 0 0 0 2px rgba(100,140,170,.20);
+    border-radius: 44px 14px 46px 40px;
+  }
+  .row.grouped .bubble { border-radius: 40px 44px 40px 46px; }
+  .row.me.grouped .bubble { border-radius: 44px 40px 46px 40px; }
+
+  .page-foot {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 40px; font-size: 28px; color: var(--ink-soft);
+  }
+
+  .empty { font-size: 15px; color: var(--ink-soft); padding: 40px 0; }
+
+  @media (max-width: 960px) {
+    body { grid-template-columns: 220px 1fr; grid-template-rows: auto 1fr; height: auto; }
+    .preview { grid-column: 1 / -1; }
+  }
+  @media (max-width: 760px) {
+    body { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; height: auto; }
+    .sidebar { border-right: 0; border-bottom: 1px solid var(--line); max-height: 240px; }
+    .editor { border-right: 0; border-bottom: 1px solid var(--line); }
+    .preview { grid-column: auto; }
+    textarea { min-height: 260px; }
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h1 class="brand">blabla</h1>
+    <label class="btn">打开文件夹<input type="file" id="openFolder" webkitdirectory multiple></label>
+    <input type="search" id="convSearch" class="searchBox" placeholder="搜索标题 / 话题 / 内容 / 日期">
+    <nav class="convList" id="convList">
+      <p class="empty">打开一个文件夹，浏览里面的每一篇对话</p>
+    </nav>
+  </aside>
+
+  <section class="editor">
+    <p class="hint">
+      第一行写 <code>title: 标题</code>，再写 <code>topic:</code> / <code>type:</code>，用
+      <code>role: 名字 头像 显示名</code> 定义角色，<code>---</code> 之后每行一句：<code>me: 说的话</code>。
+      <code>me</code> 在右边，其他角色（对话的 partner）在左边。
+    </p>
+    <textarea id="src" spellcheck="false" aria-label="对话内容"></textarea>
+    <div class="actions">
+      <button class="primary" id="exportAll">导出全部图片</button>
+      <label class="btn">打开 .txt<input type="file" id="openFile" accept=".txt,text/plain"></label>
+      <button id="saveTxt">保存为 .txt</button>
+    </div>
+    <p class="status" id="status" role="status"></p>
+  </section>
+
+  <main class="preview">
+    <div class="viewTabs">
+      <button type="button" class="tab" data-mode="read">阅读</button>
+      <button type="button" class="tab" data-mode="export">导出预览</button>
+    </div>
+    <div class="readPanel" id="readPanel"></div>
+    <div class="pages" id="pages" hidden></div>
+  </main>
+
+<script>
+const SAMPLE = `title: 和一棵树的对话
+topic: 自我评价与存在
+type: 哲学
+role: me 🙋‍♀️ 我
+role: tree 🌳 树
+---
+me: 你是不是也有烦恼啊？
+tree: 为什么这么问？
+me: 你还年轻的时候，会不会担心自己长不成参天大树？
+me: 就像人类一样，总怕自己没长成该有的样子。
+tree: 会，但也不会。
+me: 什么意思？
+tree: 我们也有丛林法则。要往上长，要争更多的阳光。
+tree: 长得慢一点，可能就被别的树挡住了。
+me: 那不就跟人一样吗？
+tree: 有一点不一样。
+tree: 没有别的树会 judge 我。
+tree: 我长成什么样，就只是一种状态。
+tree: 高一点，矮一点，弯一点，都只是"是这样"。
+tree: 没有好，也没有不好。
+me: ……所以让我们痛苦的，可能不是没长高，而是被打分。
+tree: 你们人类给什么都打分，连自己也是。`;
+
+const STORE_KEY = 'blabla:draft';
+const src = document.getElementById('src');
+const pagesEl = document.getElementById('pages');
+const readPanelEl = document.getElementById('readPanel');
+const statusEl = document.getElementById('status');
+
+/* ---------- parsing ---------- */
+function parse(text) {
+  const out = { title: '', topic: '', type: '', date: '', roles: {}, messages: [] };
+  const lines = text.replace(/\r/g, '').split('\n');
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (!line.trim() || line.trim() === '---' || line.trim().startsWith('#')) continue;
+    const m = line.match(/^\s*([^:：\s]+)\s*[:：]\s?(.*)$/);
+    if (m) {
+      const key = m[1], val = m[2];
+      if (key === 'title') { out.title = val.trim(); continue; }
+      if (key === 'topic') { out.topic = val.trim(); continue; }
+      if (key === 'type') { out.type = val.trim(); continue; }
+      if (key === 'date') { out.date = val.trim(); continue; }
+      if (key === 'role') {
+        const [id, avatar, ...name] = val.trim().split(/\s+/);
+        if (id) out.roles[id] = { avatar: avatar || id[0], name: name.join(' ') || id };
+        continue;
+      }
+      out.messages.push({ who: key, text: val });
+    } else if (out.messages.length) {
+      // a line without a speaker continues the previous message
+      out.messages[out.messages.length - 1].text += '\n' + line.trim();
+    }
+  }
+  for (const msg of out.messages) {
+    if (!out.roles[msg.who]) out.roles[msg.who] = { avatar: msg.who[0].toUpperCase(), name: msg.who };
+  }
+  return out;
+}
+
+function partnerRole(data) {
+  const id = Object.keys(data.roles).find(k => k !== 'me');
+  return id ? { id, ...data.roles[id] } : null;
+}
+
+/* ---------- shared element helper ---------- */
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+/* ---------- read view: scrollable chat-history style ---------- */
+function makeReadRow(msg, role, grouped) {
+  const row = el('div', 'rrow' + (msg.who === 'me' ? ' me' : '') + (grouped ? ' grouped' : ''));
+  row.appendChild(el('div', 'ravatar', role.avatar));
+  const box = el('div', 'rmsg');
+  if (!grouped) box.appendChild(el('div', 'rname', role.name));
+  box.appendChild(el('div', 'rbubble', msg.text));
+  row.appendChild(box);
+  return row;
+}
+
+function renderReadView(data) {
+  readPanelEl.innerHTML = '';
+  if (!data.messages.length) {
+    readPanelEl.appendChild(el('p', 'empty', '在左边写下第一句对话，比如 me: 你好呀'));
+    return;
+  }
+  const head = el('div', 'read-head');
+  head.appendChild(el('h2', 'read-title', data.title || '无题'));
+  const metaBits = [data.type, data.topic].filter(Boolean);
+  if (metaBits.length) head.appendChild(el('p', 'read-meta', metaBits.join(' · ')));
+  readPanelEl.appendChild(head);
+  const chat = el('div', 'read-chat');
+  data.messages.forEach((msg, i) => {
+    const grouped = i > 0 && data.messages[i - 1].who === msg.who;
+    chat.appendChild(makeReadRow(msg, data.roles[msg.who], grouped));
+  });
+  readPanelEl.appendChild(chat);
+}
+
+function renderPartnerThread(group) {
+  readPanelEl.innerHTML = '';
+  if (!group || !group.items.length) {
+    readPanelEl.appendChild(el('p', 'empty', '在左边写下第一句对话，比如 me: 你好呀'));
+    return;
+  }
+  const head = el('div', 'read-head');
+  head.appendChild(el('h2', 'read-title', group.name || '无题'));
+  readPanelEl.appendChild(head);
+  const chat = el('div', 'read-chat');
+  group.items.forEach(item => {
+    const data = parse(item.text);
+    const divider = el('button', 'read-divider' + (item.id === currentFileId ? ' active' : ''));
+    divider.type = 'button';
+    divider.textContent = [item.date, item.type, item.topic || item.title].filter(Boolean).join(' · ');
+    divider.onclick = () => {
+      currentFileId = item.id;
+      src.value = item.text;
+      render();
+      try { localStorage.setItem(STORE_KEY, src.value); } catch (e) {}
+      statusEl.textContent = `已切换到 ${item.name}`;
+    };
+    chat.appendChild(divider);
+    data.messages.forEach((msg, i) => {
+      const grouped = i > 0 && data.messages[i - 1].who === msg.who;
+      chat.appendChild(makeReadRow(msg, data.roles[msg.who], grouped));
+    });
+  });
+  readPanelEl.appendChild(chat);
+}
+
+/* ---------- export pages: fixed 1080x1440 cards ---------- */
+function makePage(title, isFirst) {
+  const thumb = el('div', 'thumb');
+  const page = el('div', 'page' + (isFirst ? '' : ' cont'));
+  const head = el('div', 'page-head');
+  head.appendChild(el('h2', 'page-title', title || '无题'));
+  const chat = el('div', 'chat');
+  const foot = el('div', 'page-foot');
+  foot.append(el('span', '', 'blabla'), el('span', 'num', ''));
+  page.append(head, chat, foot);
+  thumb.appendChild(page);
+  pagesEl.appendChild(thumb);
+  return { thumb, page, chat, foot };
+}
+
+function makeRow(msg, role, grouped) {
+  const row = el('div', 'row' + (msg.who === 'me' ? ' me' : '') + (grouped ? ' grouped' : ''));
+  row.appendChild(el('div', 'avatar', role.avatar));
+  const box = el('div', 'msg');
+  if (!grouped) box.appendChild(el('div', 'name', role.name));
+  box.appendChild(el('div', 'bubble', msg.text));
+  row.appendChild(box);
+  return row;
+}
+
+let pages = [];
+let currentTitle = '';
+
+function renderExportPages(data) {
+  pagesEl.innerHTML = '';
+  pages = [];
+  if (!data.messages.length) {
+    pagesEl.appendChild(el('p', 'empty', '在左边写下第一句对话，比如 me: 你好呀'));
+    return;
+  }
+  let p = makePage(data.title, true);
+  pages.push(p);
+  data.messages.forEach((msg, i) => {
+    const grouped = i > 0 && data.messages[i - 1].who === msg.who && p.chat.children.length > 0;
+    let row = makeRow(msg, data.roles[msg.who], grouped);
+    p.chat.appendChild(row);
+    if (p.chat.scrollHeight > p.chat.clientHeight + 1 && p.chat.children.length > 1) {
+      p.chat.removeChild(row);
+      p = makePage(data.title, false);
+      pages.push(p);
+      row = makeRow(msg, data.roles[msg.who], false);
+      p.chat.appendChild(row);
+    }
+  });
+  pages.forEach((pg, i) => {
+    pg.foot.querySelector('.num').textContent = pages.length > 1 ? `${i + 1} / ${pages.length}` : '';
+    pg.thumb.tabIndex = 0;
+    pg.thumb.setAttribute('role', 'button');
+    pg.thumb.setAttribute('aria-label', `导出第 ${i + 1} 页`);
+    pg.thumb.onclick = () => exportPages([i]);
+    pg.thumb.onkeydown = e => { if (e.key === 'Enter') exportPages([i]); };
+  });
+}
+
+let viewScope = 'file'; // 'file': the single text in the editor, 'partner': the whole thread with one partner
+let activePartnerId = null;
+let currentFileId = null;
+
+function render() {
+  const data = parse(src.value);
+  currentTitle = data.title;
+  // the 1080x1440 pagination measures real layout (clientHeight/scrollHeight),
+  // which only works while .pages is actually visible — see setMode().
+  if (mode === 'export') renderExportPages(data);
+  if (viewScope === 'partner' && activePartnerId != null) {
+    renderPartnerThread(buildPartners().find(p => p.id === activePartnerId));
+  } else {
+    renderReadView(data);
+  }
+}
+
+/* ---------- read / export tabs ---------- */
+let mode = 'read';
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  readPanelEl.hidden = m !== 'read';
+  pagesEl.hidden = m !== 'export';
+  // unhide first, then measure/build — overflow-based pagination needs real layout
+  if (m === 'export') renderExportPages(parse(src.value));
+}
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+setMode('read');
+
+/* ---------- scaling the export preview ---------- */
+function fitScale() {
+  const w = document.querySelector('.preview').clientWidth - 48;
+  const s = Math.max(.2, Math.min(.42, (w - 20) / 2 / 1080));
+  document.documentElement.style.setProperty('--s', s.toFixed(3));
+}
+
+/* ---------- export ---------- */
+function safeName(s) {
+  return (s || 'blabla').replace(/[\\/:*?"<>|]/g, '').trim() || 'blabla';
+}
+function download(url, name) {
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function exportPages(indexes) {
+  if (typeof htmlToImage === 'undefined') {
+    statusEl.textContent = '导出组件没有加载，请检查网络后刷新页面。';
+    return;
+  }
+  setMode('export');
+  const btn = document.getElementById('exportAll');
+  btn.disabled = true;
+  try {
+    for (let n = 0; n < indexes.length; n++) {
+      const i = indexes[n];
+      statusEl.textContent = `正在导出 ${n + 1} / ${indexes.length}…`;
+      const url = await htmlToImage.toPng(pages[i].page, {
+        width: 1080, height: 1440, pixelRatio: 1,
+        style: { transform: 'none' }
+      });
+      download(url, `${safeName(currentTitle)}-${String(i + 1).padStart(2, '0')}.png`);
+      await new Promise(r => setTimeout(r, 300));
+    }
+    statusEl.textContent = `已导出 ${indexes.length} 张图片`;
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = '导出失败：' + (err && err.message ? err.message : err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ---------- sidebar: WhatsApp-style "people" list, grouped by partner ---------- */
+const convListEl = document.getElementById('convList');
+const convSearchEl = document.getElementById('convSearch');
+let library = []; // flat list of every conversation file: { id, name, text, title, topic, type, date, partnerId, partnerName, partnerAvatar }
+
+function localISODate(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function buildPartners() {
+  const map = new Map();
+  library.forEach(item => {
+    if (!map.has(item.partnerId)) {
+      map.set(item.partnerId, { id: item.partnerId, name: item.partnerName, avatar: item.partnerAvatar, items: [] });
+    }
+    map.get(item.partnerId).items.push(item);
+  });
+  const groups = Array.from(map.values());
+  groups.forEach(g => g.items.sort((a, b) => (Date.parse(a.date) || 0) - (Date.parse(b.date) || 0)));
+  groups.sort((a, b) => {
+    const da = Date.parse(a.items[a.items.length - 1].date) || 0;
+    const db = Date.parse(b.items[b.items.length - 1].date) || 0;
+    return db - da;
+  });
+  return groups;
+}
+
+function renderSidebar() {
+  convListEl.innerHTML = '';
+  if (!library.length) {
+    convListEl.appendChild(el('p', 'empty', '打开一个文件夹，浏览里面的每一篇对话'));
+    return;
+  }
+  const q = convSearchEl.value.trim().toLowerCase();
+  let groups = buildPartners();
+  if (q) {
+    groups = groups.filter(g => g.items.some(item => {
+      const hay = [item.title, item.topic, item.type, g.name, item.date, item.text].join(' ').toLowerCase();
+      return hay.includes(q);
+    }));
+  }
+  if (!groups.length) {
+    convListEl.appendChild(el('p', 'empty', '没有找到匹配的对话'));
+    return;
+  }
+  groups.forEach(g => {
+    const last = g.items[g.items.length - 1];
+    const row = el('button', 'convItem' + (g.id === activePartnerId ? ' active' : ''));
+    row.type = 'button';
+    row.appendChild(el('div', 'convItem-avatar', g.avatar || '💬'));
+    const body = el('div', 'convItem-body');
+    const top = el('div', 'convItem-top');
+    top.appendChild(el('span', 'convItem-title', g.name || '未知'));
+    if (last.date) top.appendChild(el('span', 'convItem-date', last.date));
+    body.appendChild(top);
+    const metaBits = [last.type, last.topic || last.title].filter(Boolean);
+    body.appendChild(el('div', 'convItem-meta', metaBits.join(' · ')));
+    row.appendChild(body);
+    row.onclick = () => {
+      viewScope = 'partner';
+      activePartnerId = g.id;
+      currentFileId = last.id;
+      src.value = last.text;
+      render();
+      renderSidebar();
+      setMode('read');
+      try { localStorage.setItem(STORE_KEY, src.value); } catch (e) {}
+      statusEl.textContent = `正在阅读和 ${g.name} 的全部对话`;
+      requestAnimationFrame(() => {
+        const prev = document.querySelector('.preview');
+        prev.scrollTop = prev.scrollHeight;
+      });
+    };
+    convListEl.appendChild(row);
+  });
+}
+
+convSearchEl.addEventListener('input', renderSidebar);
+
+document.getElementById('openFolder').onchange = async e => {
+  const files = Array.from(e.target.files).filter(f => /\.txt$/i.test(f.name));
+  if (!files.length) {
+    statusEl.textContent = '这个文件夹里没有找到 .txt 对话文件';
+    e.target.value = '';
+    return;
+  }
+  const loaded = await Promise.all(files.map(async f => {
+    const text = await f.text();
+    const data = parse(text);
+    const partner = partnerRole(data);
+    return {
+      id: f.webkitRelativePath || f.name, name: f.name, text,
+      title: data.title, topic: data.topic, type: data.type,
+      date: data.date || localISODate(new Date(f.lastModified)),
+      partnerId: partner ? partner.id : '_none',
+      partnerName: partner ? partner.name : '未知',
+      partnerAvatar: partner ? partner.avatar : '💬'
+    };
+  }));
+  library = loaded;
+  convSearchEl.value = '';
+  const groups = buildPartners();
+  if (groups.length) {
+    const top = groups[0];
+    const last = top.items[top.items.length - 1];
+    viewScope = 'partner';
+    activePartnerId = top.id;
+    currentFileId = last.id;
+    src.value = last.text;
+  }
+  render();
+  renderSidebar();
+  setMode('read');
+  statusEl.textContent = `已打开文件夹，共 ${library.length} 篇对话，来自 ${groups.length} 个 partner`;
+  requestAnimationFrame(() => {
+    const prev = document.querySelector('.preview');
+    prev.scrollTop = prev.scrollHeight;
+  });
+  e.target.value = '';
+};
+
+/* ---------- wiring ---------- */
+let saved = null;
+try { saved = localStorage.getItem(STORE_KEY); } catch (e) {}
+src.value = saved || SAMPLE;
+
+let timer;
+src.addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    // typing edits a single draft, so step out of the combined partner thread view
+    viewScope = 'file';
+    render();
+    try { localStorage.setItem(STORE_KEY, src.value); } catch (e) {}
+  }, 200);
+});
+
+document.getElementById('exportAll').onclick = () => {
+  setMode('export');
+  exportPages(pages.map((_, i) => i));
+};
+
+document.getElementById('openFile').onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  viewScope = 'file';
+  activePartnerId = null;
+  currentFileId = null;
+  file.text().then(t => {
+    src.value = t; render(); renderSidebar();
+    statusEl.textContent = `已打开 ${file.name}`;
+  });
+  e.target.value = '';
+};
+
+document.getElementById('saveTxt').onclick = () => {
+  const blob = new Blob([src.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  download(url, safeName(currentTitle) + '.txt');
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  statusEl.textContent = '已保存对话文本';
+};
+
+window.addEventListener('resize', fitScale);
+fitScale();
+render();
+</script>
+</body>
+</html>
