@@ -1,13 +1,9 @@
 "use client";
 
-import { ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { PartnerGroup } from "@/lib/library";
-
-type FileInputElement = HTMLInputElement & { webkitdirectory?: boolean };
 
 export function Sidebar({
   groups,
@@ -15,7 +11,6 @@ export function Sidebar({
   onQueryChange,
   activePartnerId,
   onSelectPartner,
-  onOpenFolder,
   status,
 }: {
   groups: PartnerGroup[];
@@ -23,34 +18,13 @@ export function Sidebar({
   onQueryChange: (q: string) => void;
   activePartnerId: string | null;
   onSelectPartner: (group: PartnerGroup) => void;
-  onOpenFolder: (files: FileList) => void;
   status: string;
 }) {
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files.length) onOpenFolder(e.target.files);
-    e.target.value = "";
-  }
-
   return (
     <aside className="flex flex-col bg-white border-r border-[#E9EDEF] min-h-0">
       <h1 className="text-[19px] font-semibold text-white bg-[#008069] px-4 py-4 m-0">blabla</h1>
 
       <div className="px-3 pt-3">
-        <label className={buttonVariants({ variant: "outline", className: "w-full cursor-pointer" })}>
-          打开文件夹
-          <input
-            type="file"
-            className="hidden"
-            ref={(node) => {
-              if (node) (node as FileInputElement).webkitdirectory = true;
-            }}
-            multiple
-            onChange={handleFileChange}
-          />
-        </label>
-      </div>
-
-      <div className="px-3 py-2">
         <Input
           type="search"
           value={query}
@@ -62,9 +36,7 @@ export function Sidebar({
 
       <ScrollArea className="flex-1 min-h-0">
         <nav className="flex flex-col">
-          {groups.length === 0 && (
-            <p className="text-[#667781] text-sm px-4 py-4">没有找到匹配的对话</p>
-          )}
+          {groups.length === 0 && <p className="text-[#667781] text-sm px-4 py-4">没有找到匹配的对话</p>}
           {groups.map((g) => {
             const last = g.items[g.items.length - 1];
             const active = g.id === activePartnerId;

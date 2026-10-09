@@ -2,6 +2,7 @@ import { parseConversation, partnerRole } from "./parse";
 
 export type LibraryItem = {
   id: string;
+  folder: string;
   name: string;
   text: string;
   title: string;
@@ -25,18 +26,18 @@ function localISODate(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export function buildLibraryItem(file: File, text: string): LibraryItem {
+export function buildLibraryItem(folder: string, name: string, text: string, mtimeMs: number): LibraryItem {
   const data = parseConversation(text);
   const partner = partnerRole(data);
-  const withPath = file as File & { webkitRelativePath?: string };
   return {
-    id: withPath.webkitRelativePath || file.name,
-    name: file.name,
+    id: folder,
+    folder,
+    name,
     text,
     title: data.title,
     topic: data.topic,
     type: data.type,
-    date: data.date || localISODate(new Date(file.lastModified)),
+    date: data.date || localISODate(new Date(mtimeMs)),
     partnerId: partner ? partner.id : "_none",
     partnerName: partner ? partner.name : "未知",
     partnerAvatar: partner ? partner.avatar : "💬",

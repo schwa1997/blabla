@@ -8,7 +8,6 @@ import { ReadViewPartner } from "@/components/ReadView";
 import { ExportView, type ExportViewHandle } from "@/components/ExportView";
 import { parseConversation } from "@/lib/parse";
 import { buildLibraryItem, buildPartners, type LibraryItem, type PartnerGroup } from "@/lib/library";
-import { buildMediaMap, revokeMediaMap, type MediaMeta } from "@/lib/media";
 
 const SAMPLE = `title: 和一棵树的对话
 topic: 自我评价与存在
@@ -40,6 +39,7 @@ const DEMO_GROUP: PartnerGroup = {
   items: [
     {
       id: "_demo-item",
+      folder: "_demo",
       name: "demo.txt",
       text: SAMPLE,
       title: "和一棵树的对话",
@@ -54,10 +54,11 @@ const DEMO_GROUP: PartnerGroup = {
 };
 
 type Tab = "read" | "export";
+type ConversationFile = { folder: string; name: string; text: string; mtimeMs: number };
 
 export default function Home() {
   const [library, setLibrary] = useState<LibraryItem[]>([]);
-  const [mediaMap, setMediaMap] = useState<Map<string, MediaMeta>>(new Map());
+  const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState("");
   const [activePartnerId, setActivePartnerId] = useState<string | null>(DEMO_GROUP.id);
   const [currentFileId, setCurrentFileId] = useState<string | null>(DEMO_GROUP.items[0].id);
@@ -66,6 +67,31 @@ export default function Home() {
   const pendingExportAllRef = useRef(false);
   const exportRef = useRef<ExportViewHandle>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/conversations")
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((data: { items: ConversationFile[] }) => {
+        if (cancelled || !data.items?.length) return;
+        const items = data.items.map((f) => buildLibraryItem(f.folder, f.name, f.text, f.mtimeMs));
+        setLibrary(items);
+        const newGroups = buildPartners(items);
+        if (newGroups.length) {
+          const top = newGroups[0];
+          const last = top.items[top.items.length - 1];
+          setActivePartnerId(top.id);
+          setCurrentFileId(last.id);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const groups = useMemo<PartnerGroup[]>(
     () => (library.length ? buildPartners(library) : [DEMO_GROUP]),
@@ -94,32 +120,6 @@ export default function Home() {
       exportRef.current?.exportAll();
     }
   }, [tab]);
-
-  async function handleOpenFolder(fileList: FileList) {
-    const all = Array.from(fileList);
-    const txtFiles = all.filter((f) => /\.txt$/i.test(f.name));
-    if (!txtFiles.length) {
-      setStatus("这个文件夹里没有找到 .txt 对话文件");
-      return;
-    }
-    const newMediaMap = await buildMediaMap(all);
-    setMediaMap((prev) => {
-      revokeMediaMap(prev);
-      return newMediaMap;
-    });
-    const loaded = await Promise.all(txtFiles.map(async (f) => buildLibraryItem(f, await f.text())));
-    setLibrary(loaded);
-    setQuery("");
-    const newGroups = buildPartners(loaded);
-    if (newGroups.length) {
-      const top = newGroups[0];
-      const last = top.items[top.items.length - 1];
-      setActivePartnerId(top.id);
-      setCurrentFileId(last.id);
-    }
-    setTab("read");
-    setStatus(`已打开文件夹，共 ${loaded.length} 篇对话，来自 ${newGroups.length} 个 partner`);
-  }
 
   function handleSelectPartner(g: PartnerGroup) {
     setActivePartnerId(g.id);
@@ -153,8 +153,7 @@ export default function Home() {
         onQueryChange={setQuery}
         activePartnerId={activePartnerId}
         onSelectPartner={handleSelectPartner}
-        onOpenFolder={handleOpenFolder}
-        status={status}
+        status={loaded ? status : "正在加载对话…"}
       />
       <main className="flex flex-col min-h-0 bg-[#EFEAE2]">
         <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-[#F0F2F5] border-b border-[#E9EDEF]">
@@ -192,12 +191,11 @@ export default function Home() {
             <ReadViewPartner
               group={activeGroup}
               currentFileId={currentFileId}
-              mediaMap={mediaMap}
               onSelectItem={(item) => setCurrentFileId(item.id)}
             />
           )}
-          {tab === "export" && (
-            <ExportView ref={exportRef} data={activeData} mediaMap={mediaMap} onStatus={setStatus} />
+          {tab === "export" && activeItem && (
+            <ExportView ref={exportRef} folder={activeItem.folder} data={activeData} onStatus={setStatus} />
           )}
         </div>
       </main>
