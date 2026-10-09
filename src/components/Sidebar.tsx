@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ContactAvatar } from "@/components/ContactAvatar";
 import type { LibraryItem } from "@/lib/library";
 
 export function Sidebar({
@@ -39,6 +39,10 @@ export function Sidebar({
           {items.length === 0 && <p className="text-[#667781] text-sm px-4 py-4">没有找到匹配的对话</p>}
           {items.map((item) => {
             const active = item.id === activeItemId;
+            const primary = item.isGroup ? item.title || item.otherNames.join("、") : item.partnerName || item.title;
+            const secondary = item.isGroup
+              ? item.otherNames.join("、")
+              : [item.type, item.topic || item.title].filter(Boolean).join(" · ");
             return (
               <button
                 key={item.id}
@@ -48,19 +52,13 @@ export function Sidebar({
                   active ? "bg-[#F0F2F5]" : "hover:bg-[#F5F6F6]"
                 }`}
               >
-                <Avatar className="size-[46px] bg-[#DFE5E7]">
-                  <AvatarFallback className="bg-transparent text-xl">{item.partnerAvatar || "💬"}</AvatarFallback>
-                </Avatar>
+                <ContactAvatar item={item} size={46} />
                 <div className="min-w-0 flex-1">
                   <div className="flex justify-between items-baseline gap-2">
-                    <span className="text-[15px] text-[#111B21] truncate">
-                      {item.title || item.partnerName || "未知"}
-                    </span>
+                    <span className="text-[15px] text-[#111B21] truncate">{primary || "未知"}</span>
                     {item.date && <span className="text-[11px] text-[#667781] flex-none">{item.date}</span>}
                   </div>
-                  <div className="text-[13px] text-[#667781] truncate mt-0.5">
-                    {[item.partnerName, item.type, item.topic].filter(Boolean).join(" · ")}
-                  </div>
+                  <div className="text-[13px] text-[#667781] truncate mt-0.5">{secondary}</div>
                 </div>
               </button>
             );

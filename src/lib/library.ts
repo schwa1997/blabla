@@ -1,4 +1,4 @@
-import { parseConversation, partnerRole } from "./parse";
+import { otherRoles, parseConversation } from "./parse";
 
 export type LibraryItem = {
   id: string;
@@ -12,6 +12,9 @@ export type LibraryItem = {
   partnerId: string;
   partnerName: string;
   partnerAvatar: string;
+  isGroup: boolean;
+  otherNames: string[];
+  otherAvatars: string[];
 };
 
 function localISODate(d: Date) {
@@ -21,7 +24,8 @@ function localISODate(d: Date) {
 
 export function buildLibraryItem(folder: string, name: string, text: string, mtimeMs: number): LibraryItem {
   const data = parseConversation(text);
-  const partner = partnerRole(data);
+  const others = otherRoles(data);
+  const partner = others[0] ?? null;
   return {
     id: folder,
     folder,
@@ -34,6 +38,9 @@ export function buildLibraryItem(folder: string, name: string, text: string, mti
     partnerId: partner ? partner.id : "_none",
     partnerName: partner ? partner.name : "未知",
     partnerAvatar: partner ? partner.avatar : "💬",
+    isGroup: others.length > 1,
+    otherNames: others.map((o) => o.name),
+    otherAvatars: others.map((o) => o.avatar),
   };
 }
 

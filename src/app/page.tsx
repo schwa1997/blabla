@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/Sidebar";
+import { ContactAvatar } from "@/components/ContactAvatar";
 import { ReadView } from "@/components/ReadView";
 import { ExportView, type ExportViewHandle } from "@/components/ExportView";
 import { parseConversation } from "@/lib/parse";
@@ -44,6 +44,9 @@ const DEMO_ITEM: LibraryItem = {
   partnerId: "tree",
   partnerName: "树",
   partnerAvatar: "🌳",
+  isGroup: false,
+  otherNames: ["树"],
+  otherAvatars: ["🌳"],
 };
 
 type Tab = "read" | "export";
@@ -119,7 +122,16 @@ export default function Home() {
     }
   }
 
-  const headerSub = [activeItem?.type, activeItem?.topic].filter(Boolean).join(" · ");
+  const headerPrimary = activeItem
+    ? activeItem.isGroup
+      ? activeItem.title || activeItem.otherNames.join("、")
+      : activeItem.partnerName || activeItem.title
+    : "";
+  const headerSub = activeItem
+    ? activeItem.isGroup
+      ? activeItem.otherNames.join("、")
+      : [activeItem.type, activeItem.topic || activeItem.title].filter(Boolean).join(" · ")
+    : "";
 
   return (
     <div className="grid grid-cols-[300px_1fr] h-full">
@@ -134,13 +146,9 @@ export default function Home() {
       <main className="flex flex-col min-h-0 bg-[#EFEAE2]">
         <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-[#F0F2F5] border-b border-[#E9EDEF]">
           <div className="flex items-center gap-3.5 min-w-0">
-            <Avatar className="size-10 bg-[#DFE5E7]">
-              <AvatarFallback className="bg-transparent text-xl">{activeItem?.partnerAvatar ?? "💬"}</AvatarFallback>
-            </Avatar>
+            {activeItem && <ContactAvatar item={activeItem} size={40} />}
             <div className="min-w-0">
-              <div className="text-[15px] font-semibold text-[#111B21] truncate">
-                {activeItem?.title || activeItem?.partnerName || "无题"}
-              </div>
+              <div className="text-[15px] font-semibold text-[#111B21] truncate">{headerPrimary || "无题"}</div>
               {headerSub && <div className="text-xs text-[#667781] mt-0.5 truncate">{headerSub}</div>}
             </div>
           </div>

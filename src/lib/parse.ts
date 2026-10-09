@@ -85,7 +85,13 @@ export function parseConversation(text: string): ConversationData {
   return out;
 }
 
+/** Every non-"me" role, in the order its `role:` line was declared. */
+export function otherRoles(data: ConversationData): (Role & { id: string })[] {
+  return Object.keys(data.roles)
+    .filter((id) => id !== "me")
+    .map((id) => ({ id, ...data.roles[id] }));
+}
+
 export function partnerRole(data: ConversationData) {
-  const id = Object.keys(data.roles).find((k) => k !== "me");
-  return id ? { id, ...data.roles[id] } : null;
+  return otherRoles(data)[0] ?? null;
 }
