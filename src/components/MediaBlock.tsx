@@ -11,7 +11,7 @@ export function MediaBlock({ folder, media }: { folder: string; media: NonNullab
   if (failed) {
     const icon = media.type === "image" ? "🖼" : media.type === "video" ? "🎬" : "🎵";
     return (
-      <div className="flex flex-col items-center justify-center gap-1 bg-[#E7E7E7] text-[#8a8a8a] text-xs text-center p-3 w-[220px] h-[140px]">
+      <div className="flex flex-col items-center justify-center gap-1 bg-avatar text-ink-soft text-xs text-center p-3 w-[220px] h-[140px]">
         <span>
           {icon} {media.filename}
         </span>

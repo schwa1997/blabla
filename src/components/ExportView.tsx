@@ -74,14 +74,14 @@ function makePage(title: string, isFirst: boolean): PageHandle {
   head.appendChild(el("h2", "page-title", title || "无题"));
   const chat = el("div", "chat");
   const foot = el("div", "page-foot");
-  foot.append(el("span", "", "blabla"), el("span", "num", ""));
+  foot.append(el("span", "", "Moonchat"), el("span", "num", ""));
   page.append(head, chat, foot);
   thumb.appendChild(page);
   return { thumb, page, chat, foot };
 }
 
 function safeName(s: string) {
-  return (s || "blabla").replace(/[\\/:*?"<>|]/g, "").trim() || "blabla";
+  return (s || "Moonchat").replace(/[\\/:*?"<>|]/g, "").trim() || "Moonchat";
 }
 
 function download(url: string, name: string) {

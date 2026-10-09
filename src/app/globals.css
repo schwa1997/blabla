@@ -48,6 +48,68 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* "Quiet night" app palette — semantic colors exposed to Tailwind (bg-surface, text-ink, …).
+   Values live in :root (bright) and .dark (night) below, so the theme toggle swaps them. */
+@theme inline {
+  --color-side: var(--mc-side);
+  --color-side-raised: var(--mc-side-raised);
+  --color-side-line: var(--mc-side-line);
+  --color-starlight: var(--mc-starlight);
+  --color-starlight-soft: var(--mc-starlight-soft);
+  --color-moon: var(--mc-moon);
+  --color-moon-soft: var(--mc-moon-soft);
+  --color-surface: var(--mc-surface);
+  --color-surface-raised: var(--mc-surface-raised);
+  --color-line: var(--mc-line);
+  --color-avatar: var(--mc-avatar);
+  --color-ink: var(--mc-ink);
+  --color-ink-soft: var(--mc-ink-soft);
+  --color-dusk: var(--mc-dusk);
+  --color-bubble-me: var(--mc-bubble-me);
+  --color-bubble-them: var(--mc-bubble-them);
+}
+
+:root {
+  --mc-side: #1b1f3b;
+  --mc-side-raised: #2a2f55;
+  --mc-side-line: rgb(255 255 255 / 0.07);
+  --mc-starlight: #ece9f7;
+  --mc-starlight-soft: #9b9dc4;
+  --mc-moon: #e8c77a;
+  --mc-moon-soft: #f5e6bd;
+  --mc-surface: #f6f1e7;
+  --mc-surface-raised: #fbf8f2;
+  --mc-line: #e8e0d0;
+  --mc-avatar: #ece4d3;
+  --mc-ink: #2a2d45;
+  --mc-ink-soft: #7d7b8e;
+  --mc-dusk: #4b4f8a;
+  --mc-bubble-me: #e7e5f6;
+  --mc-bubble-them: #fffdf8;
+}
+
+.dark {
+  --mc-side: #0f1226;
+  --mc-side-raised: #232850;
+  --mc-surface: #161a33;
+  --mc-surface-raised: #1d2143;
+  --mc-line: rgb(255 255 255 / 0.08);
+  --mc-avatar: #2a2f55;
+  --mc-ink: #ece9f7;
+  --mc-ink-soft: #9b9dc4;
+  --mc-dusk: #c3c0f2;
+  --mc-bubble-me: #353a6b;
+  --mc-bubble-them: #22274a;
+}
+
+/* search-term highlight, shared by the sidebar and the reading view */
+mark.hit {
+  background: color-mix(in srgb, var(--mc-moon) 55%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

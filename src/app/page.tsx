@@ -143,16 +143,16 @@ export default function Home() {
         onSelectItem={handleSelectItem}
         status={loaded ? status : "正在加载对话…"}
       />
-      <main className="flex flex-col min-h-0 bg-[#EFEAE2]">
-        <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-[#F0F2F5] border-b border-[#E9EDEF]">
+      <main className="flex flex-col min-h-0 bg-surface transition-colors">
+        <div className="flex items-center justify-between gap-3 px-5 py-3 bg-surface-raised border-b border-line">
           <div className="flex items-center gap-3.5 min-w-0">
             {activeItem && <ContactAvatar item={activeItem} size={40} />}
             <div className="min-w-0">
-              <div className="text-[15px] font-semibold text-[#111B21] truncate">{headerPrimary || "无题"}</div>
-              {headerSub && <div className="text-xs text-[#667781] mt-0.5 truncate">{headerSub}</div>}
+              <div className="text-[15px] font-semibold text-ink truncate">{headerPrimary || "无题"}</div>
+              {headerSub && <div className="text-xs text-ink-soft mt-0.5 truncate">{headerSub}</div>}
             </div>
           </div>
-          <Button onClick={handleExportAllClick} className="bg-[#008069] text-white hover:bg-[#008069]/90 flex-none">
+          <Button onClick={handleExportAllClick} className="bg-moon text-[#1b1f3b] hover:bg-moon-soft flex-none rounded-full px-4">
             导出图片
           </Button>
         </div>
@@ -164,7 +164,9 @@ export default function Home() {
               type="button"
               onClick={() => setTab(t)}
               className={`text-[13px] px-4 py-1.5 rounded-full border transition-colors ${
-                tab === t ? "bg-[#008069] text-white border-[#008069]" : "bg-white text-[#667781] border-[#E9EDEF]"
+                tab === t
+                  ? "bg-dusk text-surface-raised border-dusk"
+                  : "bg-surface-raised text-ink-soft border-line hover:text-ink"
               }`}
             >
               {t === "read" ? "阅读" : "导出预览"}
@@ -173,7 +175,7 @@ export default function Home() {
         </div>
 
         <div ref={chatAreaRef} className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">
-          {tab === "read" && activeItem && <ReadView data={activeData} folder={activeItem.folder} />}
+          {tab === "read" && activeItem && <ReadView data={activeData} folder={activeItem.folder} highlight={query} />}
           {tab === "export" && activeItem && (
             <ExportView ref={exportRef} folder={activeItem.folder} data={activeData} onStatus={setStatus} />
           )}
