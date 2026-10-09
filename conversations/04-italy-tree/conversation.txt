@@ -2,7 +2,7 @@ title: 和意大利山崖上那棵树的对话
 topic: 孤独与坚持
 type: 哲学
 role: me 🙋‍♀️ 我
-role: tree 🌳 树
+role: tree 🌴 意大利山崖的树
 ---
 me: img:tree.png
 我爬山的时候看到你，整座山坡只有你一棵树，长在那么陡的地方。

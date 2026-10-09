@@ -3,7 +3,7 @@ topic: 自我评价与存在
 type: 哲学
 date: 2026-10-08
 role: me 🙋‍♀️ 我
-role: tree 🌳 树
+role: tree 🌱 一棵树
 ---
 me: 你是不是也有烦恼啊？
 tree: 为什么这么问？

@@ -79,7 +79,7 @@ export default function Home() {
     };
   }, []);
 
-  const items = library.length ? library : [DEMO_ITEM];
+  const items = useMemo(() => (library.length ? library : [DEMO_ITEM]), [library]);
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
