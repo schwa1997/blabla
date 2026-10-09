@@ -3,21 +3,21 @@
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { PartnerGroup } from "@/lib/library";
+import type { LibraryItem } from "@/lib/library";
 
 export function Sidebar({
-  groups,
+  items,
   query,
   onQueryChange,
-  activePartnerId,
-  onSelectPartner,
+  activeItemId,
+  onSelectItem,
   status,
 }: {
-  groups: PartnerGroup[];
+  items: LibraryItem[];
   query: string;
   onQueryChange: (q: string) => void;
-  activePartnerId: string | null;
-  onSelectPartner: (group: PartnerGroup) => void;
+  activeItemId: string | null;
+  onSelectItem: (item: LibraryItem) => void;
   status: string;
 }) {
   return (
@@ -36,29 +36,30 @@ export function Sidebar({
 
       <ScrollArea className="flex-1 min-h-0">
         <nav className="flex flex-col">
-          {groups.length === 0 && <p className="text-[#667781] text-sm px-4 py-4">没有找到匹配的对话</p>}
-          {groups.map((g) => {
-            const last = g.items[g.items.length - 1];
-            const active = g.id === activePartnerId;
+          {items.length === 0 && <p className="text-[#667781] text-sm px-4 py-4">没有找到匹配的对话</p>}
+          {items.map((item) => {
+            const active = item.id === activeItemId;
             return (
               <button
-                key={g.id}
+                key={item.id}
                 type="button"
-                onClick={() => onSelectPartner(g)}
+                onClick={() => onSelectItem(item)}
                 className={`flex items-center gap-3.5 w-full text-left px-4 py-3 border-b border-[#E9EDEF] transition-colors ${
                   active ? "bg-[#F0F2F5]" : "hover:bg-[#F5F6F6]"
                 }`}
               >
                 <Avatar className="size-[46px] bg-[#DFE5E7]">
-                  <AvatarFallback className="bg-transparent text-xl">{g.avatar || "💬"}</AvatarFallback>
+                  <AvatarFallback className="bg-transparent text-xl">{item.partnerAvatar || "💬"}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <div className="flex justify-between items-baseline gap-2">
-                    <span className="text-[15px] text-[#111B21] truncate">{g.name || "未知"}</span>
-                    {last.date && <span className="text-[11px] text-[#667781] flex-none">{last.date}</span>}
+                    <span className="text-[15px] text-[#111B21] truncate">
+                      {item.title || item.partnerName || "未知"}
+                    </span>
+                    {item.date && <span className="text-[11px] text-[#667781] flex-none">{item.date}</span>}
                   </div>
                   <div className="text-[13px] text-[#667781] truncate mt-0.5">
-                    {[last.type, last.topic || last.title].filter(Boolean).join(" · ")}
+                    {[item.partnerName, item.type, item.topic].filter(Boolean).join(" · ")}
                   </div>
                 </div>
               </button>

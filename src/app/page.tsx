@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/Sidebar";
-import { ReadViewPartner } from "@/components/ReadView";
+import { ReadView } from "@/components/ReadView";
 import { ExportView, type ExportViewHandle } from "@/components/ExportView";
 import { parseConversation } from "@/lib/parse";
-import { buildLibraryItem, buildPartners, type LibraryItem, type PartnerGroup } from "@/lib/library";
+import { buildLibraryItem, sortByDateDesc, type LibraryItem } from "@/lib/library";
 
 const SAMPLE = `title: 和一棵树的对话
 topic: 自我评价与存在
@@ -32,25 +32,18 @@ tree: 没有好，也没有不好。
 me: ……所以让我们痛苦的，可能不是没长高，而是被打分。
 tree: 你们人类给什么都打分，连自己也是。`;
 
-const DEMO_GROUP: PartnerGroup = {
-  id: "_demo",
-  name: "树",
-  avatar: "🌳",
-  items: [
-    {
-      id: "_demo-item",
-      folder: "_demo",
-      name: "demo.txt",
-      text: SAMPLE,
-      title: "和一棵树的对话",
-      topic: "自我评价与存在",
-      type: "哲学",
-      date: "",
-      partnerId: "tree",
-      partnerName: "树",
-      partnerAvatar: "🌳",
-    },
-  ],
+const DEMO_ITEM: LibraryItem = {
+  id: "_demo-item",
+  folder: "_demo",
+  name: "demo.txt",
+  text: SAMPLE,
+  title: "和一棵树的对话",
+  topic: "自我评价与存在",
+  type: "哲学",
+  date: "",
+  partnerId: "tree",
+  partnerName: "树",
+  partnerAvatar: "🌳",
 };
 
 type Tab = "read" | "export";
@@ -60,8 +53,7 @@ export default function Home() {
   const [library, setLibrary] = useState<LibraryItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState("");
-  const [activePartnerId, setActivePartnerId] = useState<string | null>(DEMO_GROUP.id);
-  const [currentFileId, setCurrentFileId] = useState<string | null>(DEMO_GROUP.items[0].id);
+  const [activeItemId, setActiveItemId] = useState<string | null>(DEMO_ITEM.id);
   const [tab, setTab] = useState<Tab>("read");
   const [status, setStatus] = useState("");
   const pendingExportAllRef = useRef(false);
@@ -74,15 +66,9 @@ export default function Home() {
       .then((r) => (r.ok ? r.json() : { items: [] }))
       .then((data: { items: ConversationFile[] }) => {
         if (cancelled || !data.items?.length) return;
-        const items = data.items.map((f) => buildLibraryItem(f.folder, f.name, f.text, f.mtimeMs));
+        const items = sortByDateDesc(data.items.map((f) => buildLibraryItem(f.folder, f.name, f.text, f.mtimeMs)));
         setLibrary(items);
-        const newGroups = buildPartners(items);
-        if (newGroups.length) {
-          const top = newGroups[0];
-          const last = top.items[top.items.length - 1];
-          setActivePartnerId(top.id);
-          setCurrentFileId(last.id);
-        }
+        setActiveItemId(items[0].id);
       })
       .catch(() => {})
       .finally(() => {
@@ -93,25 +79,20 @@ export default function Home() {
     };
   }, []);
 
-  const groups = useMemo<PartnerGroup[]>(
-    () => (library.length ? buildPartners(library) : [DEMO_GROUP]),
-    [library]
-  );
+  const items = library.length ? library : [DEMO_ITEM];
 
-  const filteredGroups = useMemo(() => {
+  const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return groups;
-    return groups.filter((g) =>
-      g.items.some((item) => {
-        const hay = [item.title, item.topic, item.type, g.name, item.date, item.text].join(" ").toLowerCase();
-        return hay.includes(q);
-      })
-    );
-  }, [groups, query]);
+    if (!q) return items;
+    return items.filter((item) => {
+      const hay = [item.title, item.topic, item.type, item.partnerName, item.date, item.text]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [items, query]);
 
-  const activeGroup = groups.find((g) => g.id === activePartnerId) ?? groups[0];
-  const activeItem =
-    activeGroup?.items.find((it) => it.id === currentFileId) ?? activeGroup?.items[activeGroup.items.length - 1];
+  const activeItem = items.find((it) => it.id === activeItemId) ?? items[0];
   const activeData = useMemo(() => parseConversation(activeItem?.text ?? ""), [activeItem]);
 
   useEffect(() => {
@@ -121,13 +102,11 @@ export default function Home() {
     }
   }, [tab]);
 
-  function handleSelectPartner(g: PartnerGroup) {
-    setActivePartnerId(g.id);
-    const last = g.items[g.items.length - 1];
-    setCurrentFileId(last.id);
+  function handleSelectItem(item: LibraryItem) {
+    setActiveItemId(item.id);
     setTab("read");
     requestAnimationFrame(() => {
-      if (chatAreaRef.current) chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+      if (chatAreaRef.current) chatAreaRef.current.scrollTop = 0;
     });
   }
 
@@ -140,29 +119,28 @@ export default function Home() {
     }
   }
 
-  const headerSub =
-    activeGroup === DEMO_GROUP
-      ? [activeItem?.type, activeItem?.topic].filter(Boolean).join(" · ")
-      : `共 ${activeGroup?.items.length ?? 0} 篇对话`;
+  const headerSub = [activeItem?.type, activeItem?.topic].filter(Boolean).join(" · ");
 
   return (
     <div className="grid grid-cols-[300px_1fr] h-full">
       <Sidebar
-        groups={filteredGroups}
+        items={filteredItems}
         query={query}
         onQueryChange={setQuery}
-        activePartnerId={activePartnerId}
-        onSelectPartner={handleSelectPartner}
+        activeItemId={activeItemId}
+        onSelectItem={handleSelectItem}
         status={loaded ? status : "正在加载对话…"}
       />
       <main className="flex flex-col min-h-0 bg-[#EFEAE2]">
         <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-[#F0F2F5] border-b border-[#E9EDEF]">
           <div className="flex items-center gap-3.5 min-w-0">
             <Avatar className="size-10 bg-[#DFE5E7]">
-              <AvatarFallback className="bg-transparent text-xl">{activeGroup?.avatar ?? "💬"}</AvatarFallback>
+              <AvatarFallback className="bg-transparent text-xl">{activeItem?.partnerAvatar ?? "💬"}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <div className="text-[15px] font-semibold text-[#111B21] truncate">{activeGroup?.name ?? "无题"}</div>
+              <div className="text-[15px] font-semibold text-[#111B21] truncate">
+                {activeItem?.title || activeItem?.partnerName || "无题"}
+              </div>
               {headerSub && <div className="text-xs text-[#667781] mt-0.5 truncate">{headerSub}</div>}
             </div>
           </div>
@@ -187,13 +165,7 @@ export default function Home() {
         </div>
 
         <div ref={chatAreaRef} className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">
-          {tab === "read" && (
-            <ReadViewPartner
-              group={activeGroup}
-              currentFileId={currentFileId}
-              onSelectItem={(item) => setCurrentFileId(item.id)}
-            />
-          )}
+          {tab === "read" && activeItem && <ReadView data={activeData} folder={activeItem.folder} />}
           {tab === "export" && activeItem && (
             <ExportView ref={exportRef} folder={activeItem.folder} data={activeData} onStatus={setStatus} />
           )}
