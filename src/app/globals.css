@@ -102,6 +102,65 @@
   --mc-bubble-them: #22274a;
 }
 
+/* WhatsApp-style chat surface used by the reading view */
+@theme inline {
+  --color-wa-bg: var(--wa-bg);
+  --color-wa-in: var(--wa-in);
+  --color-wa-out: var(--wa-out);
+  --color-wa-text: var(--wa-text);
+  --color-wa-meta: var(--wa-meta);
+  --color-wa-tick: var(--wa-tick);
+  --color-wa-chip: var(--wa-chip);
+  --color-wa-bar: var(--wa-bar);
+  --color-wa-field: var(--wa-field);
+  --color-wa-send: var(--wa-send);
+}
+
+:root {
+  --wa-bg: #efeae2;
+  --wa-in: #ffffff;
+  --wa-out: #d9fdd3;
+  --wa-text: #111b21;
+  --wa-meta: #667781;
+  --wa-tick: #53bdeb;
+  --wa-chip: #ffffff;
+  --wa-bar: #f0f2f5;
+  --wa-field: #ffffff;
+  --wa-send: #00a884;
+  --wa-doodle: rgb(84 72 52 / 0.07);
+}
+
+.dark {
+  --wa-bg: #0b141a;
+  --wa-in: #202c33;
+  --wa-out: #005c4b;
+  --wa-text: #e9edef;
+  --wa-meta: #8696a0;
+  --wa-chip: #182229;
+  --wa-bar: #202c33;
+  --wa-field: #2a3942;
+  --wa-doodle: rgb(255 255 255 / 0.035);
+}
+
+/* faint doodle wallpaper (moons, stars, leaves, hearts) drawn as a mask so it follows --wa-doodle */
+.wa-wallpaper {
+  position: relative;
+  background-color: var(--wa-bg);
+  isolation: isolate;
+}
+.wa-wallpaper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--wa-doodle);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M30 14a12 12 0 1 0 12 16 10 10 0 0 1-12-16z'/%3E%3Cpath d='M118 22l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5z'/%3E%3Cpath d='M78 70c10-14 26-10 26 4 0 12-14 18-26 26-12-8-26-14-26-26 0-14 16-18 26-4z' transform='scale(.55) translate(60 60)'/%3E%3Cpath d='M24 104c18-16 34-10 36 8-18 4-30 2-36-8z'/%3E%3Cpath d='M24 104c10 2 20 6 28 10'/%3E%3Cpath d='M112 96h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6h-16l-8 7v-7h-4a6 6 0 0 1-6-6v-14a6 6 0 0 1 6-6z'/%3E%3Ccircle cx='86' cy='138' r='2'/%3E%3Ccircle cx='60' cy='52' r='1.5'/%3E%3Ccircle cx='144' cy='64' r='1.5'/%3E%3C/svg%3E")
+    0 0 / 160px 160px repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M30 14a12 12 0 1 0 12 16 10 10 0 0 1-12-16z'/%3E%3Cpath d='M118 22l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5z'/%3E%3Cpath d='M78 70c10-14 26-10 26 4 0 12-14 18-26 26-12-8-26-14-26-26 0-14 16-18 26-4z' transform='scale(.55) translate(60 60)'/%3E%3Cpath d='M24 104c18-16 34-10 36 8-18 4-30 2-36-8z'/%3E%3Cpath d='M24 104c10 2 20 6 28 10'/%3E%3Cpath d='M112 96h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6h-16l-8 7v-7h-4a6 6 0 0 1-6-6v-14a6 6 0 0 1 6-6z'/%3E%3Ccircle cx='86' cy='138' r='2'/%3E%3Ccircle cx='60' cy='52' r='1.5'/%3E%3Ccircle cx='144' cy='64' r='1.5'/%3E%3C/svg%3E")
+    0 0 / 160px 160px repeat;
+}
+
 /* search-term highlight, shared by the sidebar and the reading view */
 mark.hit {
   background: color-mix(in srgb, var(--mc-moon) 55%, transparent);
@@ -317,6 +376,14 @@ mark.hit {
 }
 .row.me .avatar {
   background: radial-gradient(circle at 40% 35%, var(--sky-in), var(--sky));
+}
+.avatar {
+  overflow: hidden;
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .row.grouped .avatar {
   visibility: hidden;

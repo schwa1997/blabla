@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { ConversationData, Message, Role } from "@/lib/parse";
 import { loadImageDims, mediaUrl } from "@/lib/media";
+import { ME_AVATAR_SRC } from "@/lib/me";
 
 export type ExportViewHandle = {
   exportAll: () => Promise<void>;
@@ -56,7 +57,16 @@ function buildMediaNode(
 
 function makeRow(folder: string, msg: Message, role: Role, grouped: boolean, dims: ImageDims) {
   const row = el("div", "row" + (msg.who === "me" ? " me" : "") + (grouped ? " grouped" : ""));
-  row.appendChild(el("div", "avatar", role.avatar));
+  const avatar = el("div", "avatar");
+  if (msg.who === "me") {
+    const img = el("img", "avatar-img");
+    img.src = ME_AVATAR_SRC;
+    img.alt = role.name;
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = role.avatar;
+  }
+  row.appendChild(avatar);
   const box = el("div", "msg");
   if (!grouped) box.appendChild(el("div", "name", role.name));
   const bubble = el("div", "bubble" + (msg.media ? " has-img" : ""));

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ImageDown, Images, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/Sidebar";
 import { ContactAvatar } from "@/components/ContactAvatar";
+import { Composer } from "@/components/Composer";
 import { ReadView } from "@/components/ReadView";
 import { ExportView, type ExportViewHandle } from "@/components/ExportView";
 import { parseConversation } from "@/lib/parse";
@@ -59,6 +61,8 @@ export default function Home() {
   const [activeItemId, setActiveItemId] = useState<string | null>(DEMO_ITEM.id);
   const [tab, setTab] = useState<Tab>("read");
   const [status, setStatus] = useState("");
+  const [writable, setWritable] = useState(false);
+  const scrollToEndRef = useRef(false);
   const pendingExportAllRef = useRef(false);
   const exportRef = useRef<ExportViewHandle>(null);
   const chatAreaRef = useRef<HTMLDivElement>(null);
@@ -67,8 +71,9 @@ export default function Home() {
     let cancelled = false;
     fetch("/api/conversations")
       .then((r) => (r.ok ? r.json() : { items: [] }))
-      .then((data: { items: ConversationFile[] }) => {
+      .then((data: { items: ConversationFile[]; writable?: boolean }) => {
         if (cancelled || !data.items?.length) return;
+        setWritable(!!data.writable);
         const items = sortByDateDesc(data.items.map((f) => buildLibraryItem(f.folder, f.name, f.text, f.mtimeMs)));
         setLibrary(items);
         setActiveItemId(items[0].id);
@@ -88,15 +93,20 @@ export default function Home() {
     const q = query.trim().toLowerCase();
     if (!q) return items;
     return items.filter((item) => {
-      const hay = [item.title, item.topic, item.type, item.partnerName, item.date, item.text]
-        .join(" ")
-        .toLowerCase();
+      const hay = [item.title, item.topic, item.type, item.partnerName, item.date, item.text].join(" ").toLowerCase();
       return hay.includes(q);
     });
   }, [items, query]);
 
   const activeItem = items.find((it) => it.id === activeItemId) ?? items[0];
   const activeData = useMemo(() => parseConversation(activeItem?.text ?? ""), [activeItem]);
+
+  // after sending, follow the new message to the bottom of the chat
+  useEffect(() => {
+    if (!scrollToEndRef.current || !chatAreaRef.current) return;
+    scrollToEndRef.current = false;
+    chatAreaRef.current.scrollTo({ top: chatAreaRef.current.scrollHeight, behavior: "smooth" });
+  }, [activeData]);
 
   useEffect(() => {
     if (tab === "export" && pendingExportAllRef.current) {
@@ -112,6 +122,35 @@ export default function Home() {
       if (chatAreaRef.current) chatAreaRef.current.scrollTop = 0;
     });
   }
+
+  // appends a "me" message to the conversation file; returns an error message on failure
+  async function handleSend(text: string): Promise<string | null> {
+    if (!activeItem) return "没有打开的对话";
+    try {
+      const r = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: activeItem.folder, text }),
+      });
+      const data = (await r.json().catch(() => ({}))) as { item?: ConversationFile; error?: string };
+      if (!r.ok || !data.item) return data.error ?? "发送失败";
+      const f = data.item;
+      const updated = buildLibraryItem(f.folder, f.name, f.text, f.mtimeMs);
+      scrollToEndRef.current = true;
+      setLibrary((lib) => lib.map((it) => (it.id === updated.id ? updated : it)));
+      return null;
+    } catch {
+      return "发送失败，请检查网络";
+    }
+  }
+
+  const composerDisabledReason = !loaded
+    ? "正在加载…"
+    : !library.length
+      ? "示例对话不能发送"
+      : !writable
+        ? "线上版本只读 · 本地运行 npm run dev 即可发送"
+        : undefined;
 
   function handleExportAllClick() {
     if (tab === "export") {
@@ -152,34 +191,54 @@ export default function Home() {
               {headerSub && <div className="text-xs text-ink-soft mt-0.5 truncate">{headerSub}</div>}
             </div>
           </div>
-          <Button onClick={handleExportAllClick} className="bg-moon text-[#1b1f3b] hover:bg-moon-soft flex-none rounded-full px-4">
-            导出图片
-          </Button>
-        </div>
-
-        <div className="flex gap-2 px-5 pt-2.5">
-          {(["read", "export"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`text-[13px] px-4 py-1.5 rounded-full border transition-colors ${
-                tab === t
-                  ? "bg-dusk text-surface-raised border-dusk"
-                  : "bg-surface-raised text-ink-soft border-line hover:text-ink"
-              }`}
+          <div className="flex items-center gap-1.5 flex-none">
+            <div className="flex items-center p-0.5 rounded-full bg-surface border border-line" role="tablist">
+              {(
+                [
+                  ["read", "阅读", MessageCircle],
+                  ["export", "导出预览", Images],
+                ] as const
+              ).map(([t, label, Icon]) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => setTab(t)}
+                  className={`grid place-items-center size-8 rounded-full transition-colors ${
+                    tab === t ? "bg-dusk text-surface-raised" : "text-ink-soft hover:text-ink"
+                  }`}
+                >
+                  <Icon className="size-4" />
+                </button>
+              ))}
+            </div>
+            <Button
+              onClick={handleExportAllClick}
+              size="icon"
+              aria-label="导出图片"
+              title="导出图片"
+              className="bg-moon text-[#1b1f3b] hover:bg-moon-soft flex-none rounded-full size-9"
             >
-              {t === "read" ? "阅读" : "导出预览"}
-            </button>
-          ))}
+              <ImageDown className="size-[18px]" />
+            </Button>
+          </div>
         </div>
 
-        <div ref={chatAreaRef} className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">
-          {tab === "read" && activeItem && <ReadView data={activeData} folder={activeItem.folder} highlight={query} />}
+        <div
+          ref={chatAreaRef}
+          className={`flex-1 min-h-0 overflow-y-auto ${tab === "read" ? "wa-wallpaper py-3" : "p-4 md:p-6"}`}
+        >
+          {tab === "read" && activeItem && (
+            <ReadView data={activeData} folder={activeItem.folder} date={activeItem.date} highlight={query} />
+          )}
           {tab === "export" && activeItem && (
             <ExportView ref={exportRef} folder={activeItem.folder} data={activeData} onStatus={setStatus} />
           )}
         </div>
+        {tab === "read" && <Composer onSend={handleSend} disabledReason={composerDisabledReason} />}
       </main>
     </div>
   );

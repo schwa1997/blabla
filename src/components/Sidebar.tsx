@@ -7,6 +7,7 @@ import { ContactAvatar } from "@/components/ContactAvatar";
 import { Highlight } from "@/components/Highlight";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { findSnippet } from "@/lib/search";
+import { ME_AVATAR_SRC } from "@/lib/me";
 import type { LibraryItem } from "@/lib/library";
 
 export function Sidebar({
@@ -84,11 +85,17 @@ export function Sidebar({
   return (
     <aside className="flex flex-col min-h-0 bg-side text-starlight bg-[radial-gradient(ellipse_280px_200px_at_85%_-40px,rgb(232_199_122/0.16),transparent_70%)]">
       <header className="flex items-center gap-2.5 px-4 pt-5 pb-4">
-        <div className="grid place-items-center size-9 rounded-full bg-moon/15 text-moon shadow-[0_0_18px_rgb(232_199_122/0.25)]">
-          <MoonStar className="size-[18px]" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={ME_AVATAR_SRC}
+          alt="我的头像"
+          className="size-10 flex-none rounded-full object-cover ring-2 ring-moon/50 shadow-[0_0_18px_rgb(232_199_122/0.25)]"
+        />
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-semibold tracking-wide m-0 leading-tight">Moonchat</h1>
+          <h1 className="flex items-center gap-1.5 text-lg font-semibold tracking-wide m-0 leading-tight">
+            Moonchat
+            <MoonStar className="size-4 text-moon" />
+          </h1>
           <p className="text-[11px] text-starlight-soft m-0 truncate">继续没说完的对话</p>
         </div>
         <button

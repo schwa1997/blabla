@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Moonchat · 对话生成器",
+  title: "Moonchat",
   description: "和树、和狗、和记忆里的那些声音，继续没说完的对话。",
 };
 
