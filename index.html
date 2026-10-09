@@ -18,133 +18,175 @@
     --line: #D5DCD2;
     --kai: "LXGW WenKai", "霞鹜文楷", "KaiTi", "STKaiti", "楷体", "Kaiti SC", "Noto Serif CJK SC", serif;
     --ui: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+
+    /* ---- whatsapp-style theme for the app chrome (sidebar / editor / read view) ---- */
+    --wa-teal: #008069;
+    --wa-teal-dark: #005C4B;
+    --wa-green-accent: #00A884;
+    --wa-sidebar-bg: #FFFFFF;
+    --wa-app-bg: #F0F2F5;
+    --wa-wallpaper: #EFEAE2;
+    --wa-bubble-in: #FFFFFF;
+    --wa-bubble-out: #D9FDD3;
+    --wa-text: #111B21;
+    --wa-text-soft: #667781;
+    --wa-border: #E9EDEF;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
-    background: #E4E9E1;
-    color: var(--ink);
+    background: var(--wa-app-bg);
+    color: var(--wa-text);
     font-family: var(--ui);
     display: grid;
     grid-template-columns: 260px minmax(300px, 400px) 1fr;
     height: 100vh;
   }
 
-  /* ---------- sidebar: chat-history-style list ---------- */
+  /* ---------- sidebar: WhatsApp contact-list style ---------- */
   .sidebar {
-    display: flex; flex-direction: column; gap: 14px;
-    padding: 20px 14px; background: #EAEEE6;
-    border-right: 1px solid var(--line); min-height: 0;
+    display: flex; flex-direction: column;
+    background: var(--wa-sidebar-bg);
+    border-right: 1px solid var(--wa-border); min-height: 0;
   }
-  .brand { font-family: var(--kai); font-size: 26px; margin: 0; padding: 0 6px; }
+  .brand {
+    font-family: var(--ui); font-size: 19px; font-weight: 600; margin: 0;
+    padding: 16px 16px; color: #fff; background: var(--wa-teal);
+  }
   .searchBox {
-    font: 13px var(--ui); padding: 8px 12px; border-radius: 999px;
-    border: 1px solid var(--line); background: #FBFCFA; color: var(--ink); width: 100%;
+    font: 14px var(--ui); padding: 8px 12px 8px 36px; border-radius: 8px;
+    border: none; background: var(--wa-app-bg); color: var(--wa-text); width: 100%;
+    margin: 8px 12px; width: calc(100% - 24px);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667781' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 12px center;
   }
-  .searchBox:focus-visible { outline: 2px solid var(--ochre); outline-offset: 1px; }
+  .searchBox:focus-visible { outline: 2px solid var(--wa-green-accent); outline-offset: 1px; }
   .convList {
     flex: 1; min-height: 0; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 2px;
+    display: flex; flex-direction: column;
   }
   .convItem {
-    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
-    padding: 9px 8px; border-radius: 10px; border: none; background: transparent;
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    padding: 12px 16px; border: none; background: transparent;
+    border-bottom: 1px solid var(--wa-border);
     font: inherit; color: inherit; cursor: pointer;
   }
-  .convItem:hover { background: #DEE5D8; }
-  .convItem.active { background: var(--leaf-in); }
+  .convItem:hover { background: #F5F6F6; }
+  .convItem.active { background: var(--wa-app-bg); }
   .convItem-avatar {
-    width: 38px; height: 38px; flex: none; border-radius: 50%;
-    display: grid; place-items: center; font-size: 20px; font-family: var(--kai);
-    background: radial-gradient(circle at 40% 35%, var(--leaf-in), var(--leaf));
+    width: 46px; height: 46px; flex: none; border-radius: 50%;
+    display: grid; place-items: center; font-size: 22px; font-family: var(--kai);
+    background: #DFE5E7;
   }
   .convItem-body { min-width: 0; flex: 1; }
   .convItem-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .convItem-title {
-    font-size: 14px; color: var(--ink); min-width: 0;
+    font-size: 15px; color: var(--wa-text); min-width: 0;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .convItem-date { font-size: 11px; color: var(--ink-soft); flex: none; }
+  .convItem-date { font-size: 11px; color: var(--wa-text-soft); flex: none; }
   .convItem-meta {
-    font-size: 12px; color: var(--ink-soft); margin-top: 2px;
+    font-size: 13px; color: var(--wa-text-soft); margin-top: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .convList .empty { padding: 16px 8px; font-size: 13px; }
+  .convList .empty { padding: 16px; font-size: 13px; color: var(--wa-text-soft); }
 
   /* ---------- editor ---------- */
   .editor {
     display: flex; flex-direction: column; gap: 12px;
-    padding: 20px; background: var(--paper);
-    border-right: 1px solid var(--line); min-height: 0;
+    padding: 20px; background: var(--wa-sidebar-bg);
+    border-right: 1px solid var(--wa-border); min-height: 0;
   }
-  .hint { font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
-  .hint code { background: #E3EADF; padding: 1px 5px; border-radius: 4px; }
+  .hint { font-size: 13px; color: var(--wa-text-soft); line-height: 1.6; margin: 0; }
+  .hint code { background: var(--wa-app-bg); padding: 1px 5px; border-radius: 4px; }
   textarea {
     flex: 1; min-height: 200px; resize: none;
-    font: 15px/1.7 var(--ui); color: var(--ink);
-    background: #FBFCFA; border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+    font: 15px/1.7 var(--ui); color: var(--wa-text);
+    background: var(--wa-app-bg); border: 1px solid var(--wa-border); border-radius: 8px; padding: 12px;
   }
   textarea:focus-visible, button:focus-visible, label.btn:focus-within {
-    outline: 2px solid var(--ochre); outline-offset: 2px;
+    outline: 2px solid var(--wa-green-accent); outline-offset: 2px;
   }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; }
   button, label.btn {
     font: 14px var(--ui); cursor: pointer;
     padding: 9px 14px; border-radius: 8px;
-    border: 1px solid #C3CEC0; background: #FBFCFA; color: var(--ink);
+    border: 1px solid var(--wa-border); background: #fff; color: var(--wa-text);
   }
-  button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  button.primary { background: var(--wa-teal); color: #fff; border-color: var(--wa-teal); }
   button:disabled { opacity: .5; cursor: wait; }
   label.btn input { display: none; }
-  .status { font-size: 13px; color: var(--ink-soft); min-height: 1.4em; margin: 0; }
+  .status { font-size: 13px; color: var(--wa-text-soft); min-height: 1.4em; margin: 0; }
 
-  /* ---------- preview ---------- */
-  .preview { overflow: auto; padding: 24px; min-height: 0; }
-  .viewTabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  /* ---------- preview: WhatsApp chat window ---------- */
+  .preview { display: flex; flex-direction: column; min-height: 0; background: var(--wa-wallpaper); }
+  .chatHeader {
+    display: flex; align-items: center; gap: 14px;
+    padding: 10px 20px; background: var(--wa-app-bg); border-bottom: 1px solid var(--wa-border);
+    flex: none;
+  }
+  .chatHeader-avatar {
+    width: 40px; height: 40px; flex: none; border-radius: 50%;
+    display: grid; place-items: center; font-size: 20px; font-family: var(--kai);
+    background: #DFE5E7;
+  }
+  .chatHeader-body { min-width: 0; }
+  .chatHeader-name { font-size: 15px; color: var(--wa-text); font-weight: 600; }
+  .chatHeader-sub { font-size: 12px; color: var(--wa-text-soft); margin-top: 1px; }
+  .viewTabs { display: flex; gap: 8px; padding: 10px 20px 0; flex: none; }
   .tab {
     font: 13px var(--ui); padding: 7px 16px; border-radius: 999px;
-    border: 1px solid #C3CEC0; background: #FBFCFA; color: var(--ink-soft); cursor: pointer;
+    border: 1px solid var(--wa-border); background: #fff; color: var(--wa-text-soft); cursor: pointer;
   }
-  .tab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .tab.active { background: var(--wa-teal); color: #fff; border-color: var(--wa-teal); }
   [hidden] { display: none !important; }
+  .chatArea { flex: 1; overflow: auto; padding: 16px 24px; min-height: 0; }
 
   /* ---------- read view: scrollable chat-history reading mode ---------- */
   .readPanel { max-width: 720px; margin: 0 auto; }
-  .read-head { margin-bottom: 28px; }
-  .read-title { font-family: var(--kai); font-size: 30px; font-weight: 400; margin: 0 0 6px; }
-  .read-meta { font-size: 13px; color: var(--ink-soft); margin: 0; }
-  .read-chat { display: flex; flex-direction: column; gap: 16px; }
-  .rrow { display: flex; align-items: flex-start; gap: 12px; }
+  .read-head { margin-bottom: 20px; }
+  .read-title { font-family: var(--ui); font-size: 20px; font-weight: 600; margin: 0 0 4px; color: var(--wa-text); }
+  .read-meta { font-size: 13px; color: var(--wa-text-soft); margin: 0; }
+  .read-chat { display: flex; flex-direction: column; gap: 3px; }
+  .rrow { display: flex; align-items: flex-start; gap: 8px; }
   .rrow.me { flex-direction: row-reverse; }
-  .rrow.grouped { margin-top: -8px; }
+  .rrow + .rrow { margin-top: 10px; }
+  .rrow.grouped + .rrow.grouped, .rrow + .rrow.grouped { margin-top: 2px; }
   .ravatar {
-    width: 38px; height: 38px; flex: none; border-radius: 50%;
-    display: grid; place-items: center; font-size: 20px; font-family: var(--kai);
-    background: radial-gradient(circle at 40% 35%, var(--leaf-in), var(--leaf));
+    width: 32px; height: 32px; flex: none; border-radius: 50%;
+    display: grid; place-items: center; font-size: 16px; font-family: var(--kai);
+    background: #DFE5E7;
   }
-  .rrow.me .ravatar { background: radial-gradient(circle at 40% 35%, var(--sky-in), var(--sky)); }
   .rrow.grouped .ravatar { visibility: hidden; }
   .rmsg { display: flex; flex-direction: column; max-width: 72%; }
   .rrow.me .rmsg { align-items: flex-end; }
-  .rname { font-size: 12px; color: var(--ink-soft); margin: 0 0 4px 4px; }
-  .rrow.me .rname { margin: 0 4px 4px 0; }
+  .rname { font-size: 12px; color: var(--wa-teal-dark); font-weight: 600; margin: 0 0 2px 4px; }
+  .rrow.me .rname { margin: 0 4px 2px 0; }
   .rbubble {
-    font-size: 15px; line-height: 1.6; padding: 10px 14px;
-    white-space: pre-wrap; word-break: break-word;
-    background: var(--leaf-in); box-shadow: inset 0 0 0 1px rgba(110,150,100,.18);
-    border-radius: 4px 14px 14px 14px;
+    background: var(--wa-bubble-in); box-shadow: 0 1px 1px rgba(11,20,26,.08);
+    border-radius: 4px 12px 12px 12px; overflow: hidden;
   }
   .rrow.me .rbubble {
-    background: var(--sky-in); box-shadow: inset 0 0 0 1px rgba(100,140,170,.20);
-    border-radius: 14px 4px 14px 14px;
+    background: var(--wa-bubble-out);
+    border-radius: 12px 4px 12px 12px;
+  }
+  .rbubble-text {
+    font-size: 14px; line-height: 1.5; padding: 7px 10px; color: var(--wa-text);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .rbubble.has-img .rbubble-text { padding-top: 6px; }
+  .rbubble-img, .img-missing { display: block; max-width: 100%; max-height: 280px; object-fit: cover; }
+  .img-missing {
+    display: flex; align-items: center; justify-content: center;
+    background: #E7E7E7; color: #8a8a8a; font-size: 12px; text-align: center; padding: 6px;
   }
   .read-divider {
-    align-self: center; display: block; margin: 20px auto 16px; padding: 5px 16px;
-    border-radius: 999px; border: 1px solid var(--line); background: #FBFCFA;
-    color: var(--ink-soft); font: 12px var(--ui); cursor: pointer;
+    align-self: center; display: block; margin: 16px auto 12px; padding: 5px 14px;
+    border-radius: 999px; border: none; background: #E1F2FB;
+    color: #54656F; font: 12px var(--ui); cursor: pointer;
   }
   .read-divider:first-child { margin-top: 0; }
-  .read-divider.active { background: var(--leaf-in); color: var(--ink); border-color: transparent; }
+  .read-divider.active { background: var(--wa-green-accent); color: #fff; }
 
   /* ---------- export pages ---------- */
   .pages { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
@@ -209,11 +251,10 @@
   .name { font-size: 28px; color: var(--ink-soft); margin: 0 0 8px 6px; }
   .row.me .name { margin: 0 6px 8px 0; }
   .bubble {
-    font-size: 42px; line-height: 1.55; padding: 22px 32px;
-    white-space: pre-wrap; word-break: break-word;
     background: radial-gradient(ellipse at 40% 35%, var(--leaf-in) 45%, var(--leaf) 100%);
     box-shadow: inset 0 0 0 2px rgba(110,150,100,.18);
     border-radius: 14px 44px 40px 46px;
+    overflow: hidden;
   }
   .row.me .bubble {
     background: radial-gradient(ellipse at 60% 35%, var(--sky-in) 45%, var(--sky) 100%);
@@ -222,6 +263,12 @@
   }
   .row.grouped .bubble { border-radius: 40px 44px 40px 46px; }
   .row.me.grouped .bubble { border-radius: 44px 40px 46px 40px; }
+  .bubble-text {
+    font-size: 42px; line-height: 1.55; padding: 22px 32px;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .bubble.has-img .bubble-text { padding-top: 16px; }
+  .bubble-img { display: block; }
 
   .page-foot {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -257,7 +304,9 @@
     <p class="hint">
       第一行写 <code>title: 标题</code>，再写 <code>topic:</code> / <code>type:</code>，用
       <code>role: 名字 头像 显示名</code> 定义角色，<code>---</code> 之后每行一句：<code>me: 说的话</code>。
-      <code>me</code> 在右边，其他角色（对话的 partner）在左边。
+      <code>me</code> 在右边，其他角色（对话的 partner）在左边。想加图片就写
+      <code>me: img:文件名.jpg</code>（下一行可以接着写配文），图片要和 .txt 放在同一个文件夹里，用
+      “打开文件夹”一起打开。
     </p>
     <textarea id="src" spellcheck="false" aria-label="对话内容"></textarea>
     <div class="actions">
@@ -269,12 +318,21 @@
   </section>
 
   <main class="preview">
+    <div class="chatHeader" id="chatHeader" hidden>
+      <div class="chatHeader-avatar" id="chatHeaderAvatar"></div>
+      <div class="chatHeader-body">
+        <div class="chatHeader-name" id="chatHeaderName"></div>
+        <div class="chatHeader-sub" id="chatHeaderSub"></div>
+      </div>
+    </div>
     <div class="viewTabs">
       <button type="button" class="tab" data-mode="read">阅读</button>
       <button type="button" class="tab" data-mode="export">导出预览</button>
     </div>
-    <div class="readPanel" id="readPanel"></div>
-    <div class="pages" id="pages" hidden></div>
+    <div class="chatArea" id="chatArea">
+      <div class="readPanel" id="readPanel"></div>
+      <div class="pages" id="pages" hidden></div>
+    </div>
   </main>
 
 <script>
@@ -334,8 +392,47 @@ function parse(text) {
   }
   for (const msg of out.messages) {
     if (!out.roles[msg.who]) out.roles[msg.who] = { avatar: msg.who[0].toUpperCase(), name: msg.who };
+    const im = msg.text.match(/^img:(\S+)[ \t]*\n?([\s\S]*)$/);
+    if (im) { msg.image = im[1]; msg.text = im[2].trim(); }
   }
   return out;
+}
+
+/* ---------- images: referenced by filename, loaded from the opened folder ---------- */
+const IMAGE_RE = /\.(png|jpe?g|gif|webp|bmp)$/i;
+let imageMap = {}; // filename.toLowerCase() -> { url, w, h }
+
+async function loadImageMap(files) {
+  Object.values(imageMap).forEach(m => { try { URL.revokeObjectURL(m.url); } catch (e) {} });
+  imageMap = {};
+  const imgFiles = files.filter(f => IMAGE_RE.test(f.name));
+  await Promise.all(imgFiles.map(f => new Promise(resolve => {
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => { imageMap[f.name.toLowerCase()] = { url, w: img.naturalWidth, h: img.naturalHeight }; resolve(); };
+    img.onerror = () => { imageMap[f.name.toLowerCase()] = { url, w: 400, h: 300 }; resolve(); };
+    img.src = url;
+  })));
+}
+
+function imageEl(filename, maxW, maxH) {
+  const meta = imageMap[filename.toLowerCase()];
+  if (meta) {
+    const img = document.createElement('img');
+    img.src = meta.url;
+    img.alt = filename;
+    if (maxW && maxH) {
+      const scale = Math.min(1, maxW / meta.w, maxH / meta.h);
+      img.style.width = Math.round(meta.w * scale) + 'px';
+      img.style.height = Math.round(meta.h * scale) + 'px';
+    }
+    return img;
+  }
+  const w = maxW || 240, h = maxH ? Math.round(maxH * .6) : 160;
+  const ph = el('div', 'img-missing', '🖼 ' + filename);
+  ph.style.width = w + 'px';
+  ph.style.height = h + 'px';
+  return ph;
 }
 
 function partnerRole(data) {
